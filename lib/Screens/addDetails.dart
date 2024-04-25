@@ -7,8 +7,6 @@ import 'package:cashapp/components/PrimaryContainer.dart';
 import 'package:cashapp/components/SecondaryContainer.dart';
 import 'package:cashapp/service/budget_service.dart';
 
-import '../backend/database_helper.dart';
-
 class AddDetails extends StatefulWidget {
   AddDetails({Key? key}) : super(key: key);
 
@@ -20,15 +18,13 @@ class _AddDetailsState extends State<AddDetails> {
   var _addDetailsBudgetController = TextEditingController();
   var _addDetailsIncomeController = TextEditingController();
   var _addDetailsExpenseController = TextEditingController();
-  var _budgetHelper =
-      DatabaseHelper.instance; // Initialize Database Helper instance
 
   var _budget = Budget();
   var _budgetService = budgetService();
 
-  late String budget = '';
-  late String income = '';
-  late String expense = '';
+  String budget = '';
+  String income = '';
+  String expense = '';
   late TextEditingController controller;
 
   @override
@@ -60,100 +56,59 @@ class _AddDetailsState extends State<AddDetails> {
             decoration: InputDecoration(hintText: 'Enter your budget'),
           ),
           actions: [
+            TextButton(onPressed: () {}, child: Text('Submit')),
             TextButton(
-                onPressed: () {
-                  setState(() {
-                    _budget.setbudget = _addDetailsBudgetController.text;
-                    budget = _addDetailsBudgetController
-                        .text; // Update the state variable
-                  });
-                  _budgetService.saveBudget(_budget);
-                  Navigator.of(context).pop(); // This line closes the dialog
-                },
-                child: Text('Submit')),
-            TextButton(
-                onPressed: () {
-                  setState(() {
-                    _budget.setbudget = _addDetailsBudgetController.text;
-                    budget = "";
-                  });
-                  _budgetService.saveBudget(_budget);
-                  Navigator.of(context).pop();
-                },
+                onPressed: () => Navigator.of(context).pop(),
                 child: Text("Clear"))
           ],
         ),
       );
 
   Future<String?> addIncome() => showDialog<String>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text('Your Income'),
-      content: TextField(
-        controller: _addDetailsIncomeController,
-        onSubmitted: (_) => submit,
-        autofocus: true,
-        decoration: InputDecoration(hintText: 'Enter your income'),
-      ),
-      actions: [
-        TextButton(
-            onPressed: () {
-              setState(() {
-                _budget.income = _addDetailsIncomeController.text;
-                income = _addDetailsIncomeController.text; // Update the state variable
-              });
-              _budgetService.saveBudget(_budget);
-              Navigator.of(context).pop(); // This line closes the dialog
-            },
-            child: Text('Submit')),
-        TextButton(
-            onPressed: () {
-              setState(() {
-                _budget.setbudget = _addDetailsIncomeController.text;
-                income = "";
-              });
-              _budgetService.saveBudget(_budget);
-              Navigator.of(context).pop();
-            },
-            child: Text("Clear"))
-      ],
-    ),
-  );
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Your Income'),
+          content: TextField(
+            controller: _addDetailsIncomeController,
+            onSubmitted: (_) => submit,
+            autofocus: true,
+            decoration: InputDecoration(hintText: 'Enter your income'),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () {
+                  _budget.income = _addDetailsIncomeController.text;
+                },
+                child: Text('Submit')),
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text("Clear"))
+          ],
+        ),
+      );
 
   Future<String?> addExpense() => showDialog<String>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text('Your Expense'),
-      content: TextField(
-        controller: _addDetailsExpenseController,
-        onSubmitted: (_) => submit,
-        autofocus: true,
-        decoration: InputDecoration(hintText: 'Enter your expence'),
-      ),
-      actions: [
-        TextButton(
-            onPressed: () {
-              setState(() {
-                _budget.expense = _addDetailsExpenseController.text;
-                expense = _addDetailsExpenseController.text; // Update the state variable
-              });
-              _budgetService.saveBudget(_budget);
-              Navigator.of(context).pop(); // This line closes the dialog
-            },
-            child: Text('Submit')),
-        TextButton(
-            onPressed: () {
-              setState(() {
-                _budget.expense = _addDetailsExpenseController.text;
-                expense = "";
-              });
-              _budgetService.saveBudget(_budget);
-              Navigator.of(context).pop();
-            },
-            child: Text("Clear"))
-      ],
-    ),
-  );
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Your Expense'),
+          content: TextField(
+            controller: _addDetailsExpenseController,
+            onSubmitted: (_) => submit,
+            autofocus: true,
+            decoration: InputDecoration(hintText: 'Enter your expense'),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () {
+                  _budget.expense = _addDetailsExpenseCoSntroller.text;
+                },
+                child: Text('Submit')),
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text("Clear"))
+          ],
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -275,14 +230,9 @@ class _AddDetailsState extends State<AddDetails> {
                                           ),
                                           child: Center(
                                             child: TextButton(
-                                              onPressed: () {
-                                                setState(() {
-                                                  _budget.setbudget = _addDetailsBudgetController.text;
-                                                  budget = "";
-                                                });
-
-                                              },
-                                              child: Text("X",
+                                              onPressed: () {},
+                                              child: Text(
+                                                "X",
                                                 style: TextStyle(
                                                   color: Colors.white70,
                                                   fontSize: 18,
@@ -290,7 +240,6 @@ class _AddDetailsState extends State<AddDetails> {
                                                 ),
                                               ),
                                             ),
-
                                           ),
                                         ),
                                         SizedBox(
@@ -313,7 +262,7 @@ class _AddDetailsState extends State<AddDetails> {
                                           style: TextStyle(
                                               color: Color.fromRGBO(
                                                   255, 255, 255, 1),
-                                              fontSize: 25.0,
+                                              fontSize: 40.0,
                                               fontFamily: 'Poppins',
                                               fontWeight: FontWeight.w400),
                                         ),
@@ -422,13 +371,7 @@ class _AddDetailsState extends State<AddDetails> {
                                   ),
                                   child: Center(
                                     child: TextButton(
-                                      onPressed: () {
-                                        setState(() {
-                                          _budget.income = _addDetailsIncomeController.text;
-                                          income = "";
-                                        });
-
-                                      },
+                                      onPressed: () {},
                                       child: Text(
                                         "X",
                                         style: TextStyle(
@@ -458,7 +401,7 @@ class _AddDetailsState extends State<AddDetails> {
                                   income,
                                   style: TextStyle(
                                       color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 25.0,
+                                      fontSize: 40.0,
                                       fontFamily: 'Poppins',
                                       fontWeight: FontWeight.w400),
                                 ),
@@ -534,13 +477,7 @@ class _AddDetailsState extends State<AddDetails> {
                                   ),
                                   child: Center(
                                     child: TextButton(
-                                      onPressed: () {
-                                        setState(() {
-                                          _budget.expense = _addDetailsExpenseController.text;
-                                          expense = "";
-                                        });
-
-                                      },
+                                      onPressed: () {},
                                       child: Text(
                                         "X",
                                         style: TextStyle(
@@ -570,7 +507,7 @@ class _AddDetailsState extends State<AddDetails> {
                                   expense,
                                   style: TextStyle(
                                       color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 25.0,
+                                      fontSize: 40.0,
                                       fontFamily: 'Poppins',
                                       fontWeight: FontWeight.w400),
                                 ),

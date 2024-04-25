@@ -1,38 +1,24 @@
-import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import 'dart:io';
-import 'dart:async';
 
 class DatabaseHelper {
   static const _databaseName = "cashapp.db";
-  static const _databaseVersion = 4;
+  static const _databaseVersion = 1;
 
   static const table = 'user';
   static const debtsTable = 'debts';
   static const paidTable = 'paid';
+  static const weeklyBudgetTable = 'weekly_budget';
 
   static const columnId = '_id';
   static const columnEmail = 'email';
   static const columnPassword = 'password';
   static const columnMobile = 'mobile';
-
   static const columnAmount = 'amount';
   static const columnDate = 'date';
   static const columnPaid = 'paid';
-
-  static const tableWeeklyBudget = 'weeklyBudgetTable';
-  static const columnBudgetId = 'budgetid';
-  static const columnWeekRange = 'weekRange';
-  static const columnBudget = 'budget';
-
-  static const tableWeeklyIncome = 'dailyIncome';
-  static const columnIncDate = 'date';
-  static const columnIncome = 'income';
-
-  static const tableWeeklyExpense = 'dailyExpense';
-  static const columnExpDate = 'date';
-  static const columnExpense = 'expense';
+  static const columnBudgetAmount = 'budget_amount';
+  static const columnWeekRange = 'week_range';
 
   DatabaseHelper._privateConstructor();
   static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
@@ -45,7 +31,6 @@ class DatabaseHelper {
   }
 
   _initDatabase() async {
-    Directory directory = await getApplicationCacheDirectory();
     String path = join(await getDatabasesPath(), _databaseName);
     return await openDatabase(path,
         version: _databaseVersion, onCreate: _onCreate, onUpgrade: _onUpgrade);
@@ -53,7 +38,7 @@ class DatabaseHelper {
 
   Future _onCreate(Database db, int version) async {
     await db.execute('''
-          CREATE TABLE IF NOT EXISTS $table (
+          CREATE TABLE $table (
             $columnId INTEGER PRIMARY KEY,
             $columnEmail TEXT NOT NULL,
             $columnPassword TEXT NOT NULL,
@@ -61,14 +46,14 @@ class DatabaseHelper {
           )
           ''');
     await db.execute('''
-          CREATE TABLE IF NOT EXISTS $debtsTable (
+          CREATE TABLE $debtsTable (
             $columnId INTEGER PRIMARY KEY,
             $columnAmount REAL NOT NULL,
             $columnDate TEXT NOT NULL
           )
           ''');
     await db.execute('''
-          CREATE TABLE IF NOT EXISTS $paidTable (
+          CREATE TABLE $paidTable (
             $columnId INTEGER PRIMARY KEY,
             $columnAmount REAL NOT NULL,
             $columnDate TEXT NOT NULL,
@@ -76,48 +61,25 @@ class DatabaseHelper {
           )
           ''');
     await db.execute('''
-          CREATE TABLE IF NOT EXISTS $tableWeeklyBudget (
-            $columnBudgetId INTEGER PRIMARY KEY,
-            $columnWeekRange TEXT NOT NULL,
-            $columnBudget REAL NOT NULL
-          )
-          ''');
-    await db.execute('''
-          CREATE TABLE IF NOT EXISTS $tableWeeklyIncome (
-            $columnId INTEGER PRIMARY KEY,
-            $columnDate TEXT DEFAULT (DATE('now')),
-            $columnIncome REAL NOT NULL
-          )
-          ''');
-    await db.execute('''
-          CREATE TABLE IF NOT EXISTS $tableWeeklyExpense (
-            $columnId INTEGER PRIMARY KEY,
-            $columnDate TEXT DEFAULT (DATE('now')),
-            $columnExpense REAL NOT NULL,
-            $columnWeekRange TEXT NOT NULL
-          )
-          ''');
-    // await db.execute('''
-    //       CREATE TABLE IF NOT EXISTS $dailyExpense (
-    //         _id INTEGER PRIMARY KEY,
-    //         date TEXT DEFAULT (DATE('now')),
-    //         expense REAL NOT NULL,
-    //         weekRange TEXT NOT NULL
-    //       )
-    //       ''');
+            CREATE TABLE $weeklyBudgetTable (
+              $columnId INTEGER PRIMARY KEY,
+              $columnBudgetAmount REAL NOT NULL,
+              $columnWeekRange int NOT NULL,
+              $columnDate TEXT NOT NULL
+            )
+            ''');
   }
 
   Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 3) {
+    if (oldVersion < 2) {
       await db.execute('''
-      ALTER TABLE $tableWeeklyExpense ADD COLUMN $columnWeekRange TEXT;
-    ''');
-    }
-
-    if (oldVersion < 4) {
-      await db.execute('''
-    ALTER TABLE $tableWeeklyIncome ADD COLUMN $columnWeekRange TEXT;
-    ''');
+          CREATE TABLE IF NOT EXISTS $paidTable (
+            $columnId INTEGER PRIMARY KEY,
+            $columnAmount REAL NOT NULL,
+            $columnDate TEXT NOT NULL,
+            $columnPaid INTEGER NOT NULL DEFAULT 0
+          )
+          ''');
     }
   }
 
@@ -137,9 +99,11 @@ class DatabaseHelper {
     final existingPaid =
         await db?.query(paidTable, where: '$columnId = ?', whereArgs: [id]);
     if (existingPaid != null && existingPaid.isNotEmpty) {
+      // Update existing record
       return await db
           ?.update(paidTable, row, where: '$columnId = ?', whereArgs: [id]);
     } else {
+      // Insert new record
       return await db?.insert(paidTable, row);
     }
   }
@@ -189,50 +153,4 @@ class DatabaseHelper {
       throw Exception('Database is not initialized');
     }
   }
-
-  Future<int> fetchWeeklyBudget() async {
-    final db = await instance.database;
-    final List<Map<String, dynamic>>? maps = await db?.rawQuery('''
-    SELECT $columnBudget
-    FROM $tableWeeklyBudget
-    WHERE $columnWeekRange = ?
- ''', [DateTime.now().toIso8601String()]);
-    if (maps != null && maps.isNotEmpty) {
-      return maps.first['budget'];
-    } else {
-      return 0;
-    }
-  }
-
-  Future<int> fetchTotalIncomeForWeek() async {
-    final db = await instance.database;
-    final List<Map<String, dynamic>>? maps = await db?.rawQuery('''
-    SELECT $columnIncome
-    FROM $tableWeeklyIncome
-    WHERE $columnWeekRange = ?
- ''', [DateTime.now().toIso8601String()]);
-    if (maps != null && maps.isNotEmpty) {
-      return maps.first['income'];
-    } else {
-      return 0;
-    }
-  }
-
-  Future<int> fetchTotalExpenseForWeek() async {
-    final db = await instance.database;
-    final String currentWeekRange =
-        DateTime.now().toIso8601String().substring(0, 7);
-    final List<Map<String, dynamic>>? maps = await db?.rawQuery('''
-    SELECT SUM($columnExpense) as totalExpense
-    FROM $tableWeeklyExpense
-    WHERE $columnWeekRange = ?
- ''', [currentWeekRange]);
-    if (maps != null && maps.isNotEmpty) {
-      return maps.first['totalExpense'] ?? 0;
-    } else {
-      return 0;
-    }
-  }
-
-  updateData(String budget, String income, String expense) {}
 }
